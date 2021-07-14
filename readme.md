@@ -1,4 +1,4 @@
-**Autostereogram generation in Rust.**
+# **Autostereogram generation in Rust.**
 
 Original algorithm proposed in [Displaying 3D Images: Algorithms for
 SIRDS](https://www.cs.waikato.ac.nz/~ihw/papers/94-HWT-SI-IHW-SIRDS-paper.pdf) by Harold W. Thimbleby, Stuart Inglis, and Ian H. Witten.
@@ -9,8 +9,8 @@ The script `main.rs` takes as input a depth map (here `rust.png`) in grayscale. 
 
 Below is an exemple of depth map and the autostereogram generated.
 
-Depth image:
+Depth image:  
 ![alt text](rust.png "Depth image")
 
-Autostereogram:
+Autostereogram:  
 ![alt text](autostereogram.png "Autostereogram")
