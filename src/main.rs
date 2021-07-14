@@ -1,3 +1,5 @@
+// original paper: https://www.cs.waikato.ac.nz/~ihw/papers/94-HWT-SI-IHW-SIRDS-paper.pdf
+
 use image::{GenericImageView, ImageBuffer, RgbImage};
 use rand::Rng;
 
@@ -9,14 +11,13 @@ fn separation(mu: f32, e: f32, z: f32) -> f32 {
 
 fn generate_autostereogram() -> [[u8; 512]; 512] {
     // process the depth map Z to generate autostereogram
-    // original paper: https://www.cs.waikato.ac.nz/~ihw/papers/94-HWT-SI-IHW-SIRDS-paper.pdf
     let mut rng = rand::thread_rng();
 
-    const MAX_X: usize = 512;
-    const MAX_Y: usize = 512;
-    const DPI: f32 = 72.;
-    const E: f32 = 2.5 * DPI;
-    const MU: f32 = 1. / 5.;
+    const MAX_X: usize = 512; // image X size
+    const MAX_Y: usize = 512; // image Y size
+    const DPI: f32 = 72.; // Dots Per Inch
+    const E: f32 = 2.5 * DPI; // Eye to eye distance
+    const MU: f32 = 1. / 5.; // near plane ratio (between far and image planes)
 
     let mut z: [[f32; MAX_X]; MAX_Y] = [[0.0; MAX_X]; MAX_Y];
 
@@ -40,15 +41,16 @@ fn generate_autostereogram() -> [[u8; 512]; 512] {
         // first row process, left-right
         for x in 0..MAX_X {
             let s: f32 = separation(MU, E, z[x][y]);
-            let left: f32 = x as f32 - s / 2.;
-            let right: f32 = left + s;
+            let left: f32 = x as f32 - s / 2.; // left ray image position
+            let right: f32 = left + s; // right ray image position
 
             if (left >= 0.) & (right < MAX_Y as f32) {
-                let mut left_i: u32 = left as u32;
-                let mut right_i: u32 = right as u32;
+                let mut left_i: u32 = left as u32; // left ray image index
+                let mut right_i: u32 = right as u32; // left ray image index
 
-                let mut l: u32 = same[left_i as usize];
-                while (l != left_i) & (l != right_i) {
+                let mut l: u32 = same[left_i as usize]; // same as left ray image index
+                // process rightwards until no constraint
+                while (l != left_i) & (l != right_i) { 
                     if l < right_i {
                         left_i = l;
                         l = same[left_i as usize];
@@ -59,6 +61,7 @@ fn generate_autostereogram() -> [[u8; 512]; 512] {
                         right_i = l;
                     }
                 }
+                // set left and right as same
                 same[left_i as usize] = right_i;
             }
         }
