@@ -3,28 +3,29 @@
 use image::{GenericImageView, ImageBuffer, RgbImage};
 use rand::Rng;
 
-fn separation(mu: f32, e: f32, z: f32) -> f32 {
+const MAX_X: usize = 512; // image X size
+const MAX_Y: usize = 512; // image Y size
+
+fn separation(mu: f64, e: f64, z: f64) -> f64 {
     // computes stereo separation
     let s = (1. - mu * z) * e / (2. - mu * z);
-    s as f32
+    s
 }
 
-fn generate_autostereogram() -> [[u8; 512]; 512] {
+fn generate_autostereogram() -> [[u8; MAX_X]; MAX_X] {
     // process the depth map Z to generate autostereogram
     let mut rng = rand::thread_rng();
 
-    const MAX_X: usize = 512; // image X size
-    const MAX_Y: usize = 512; // image Y size
-    const DPI: f32 = 72.; // Dots Per Inch
-    const E: f32 = 2.5 * DPI; // Eye to eye distance
-    const MU: f32 = 1. / 5.; // near plane ratio (between far and image planes)
+    const DPI: f64 = 72.; // Dots Per Inch
+    const E: f64 = 2.5 * DPI; // Eye to eye distance
+    const MU: f64 = 1. / 5.; // near plane ratio (between far and image planes)
 
-    let mut z: [[f32; MAX_X]; MAX_Y] = [[0.0; MAX_X]; MAX_Y];
+    let mut z: [[f64; MAX_X]; MAX_Y] = [[0.0; MAX_X]; MAX_Y];
 
     let img = image::open("rust.png").unwrap();
     for y in 0..MAX_Y {
         for x in 0..MAX_X {
-            z[x][y] = img.get_pixel(x as u32, y as u32)[0] as f32 / 255.;
+            z[x][y] = img.get_pixel(x as u32, y as u32)[0] as f64 / 255.;
         }
     }
 
@@ -40,29 +41,29 @@ fn generate_autostereogram() -> [[u8; 512]; 512] {
         }
         // first row process, left-right
         for x in 0..MAX_X {
-            let s: f32 = separation(MU, E, z[x][y]);
-            let left: f32 = x as f32 - s / 2.; // left ray image position
-            let right: f32 = left + s; // right ray image position
+            let s = separation(MU, E, z[x][y]);
+            let left = x as f64 - s / 2.; // left ray image position
+            let right = left + s; // right ray image position
 
-            if (left >= 0.) & (right < MAX_Y as f32) {
-                let mut left_i: u32 = left as u32; // left ray image index
-                let mut right_i: u32 = right as u32; // left ray image index
+            if (left >= 0.) & (right < MAX_Y as f64) {
+                let mut left = left as u32; // left ray image index
+                let mut right = right as u32; // left ray image index
 
-                let mut l: u32 = same[left_i as usize]; // same as left ray image index
+                let mut l = same[left as usize]; // same as left ray image index
                 // process rightwards until no constraint
-                while (l != left_i) & (l != right_i) { 
-                    if l < right_i {
-                        left_i = l;
-                        l = same[left_i as usize];
+                while (l != left) & (l != right) { 
+                    if l < right {
+                        left = l;
+                        l = same[left as usize];
                     } else {
-                        same[left_i as usize] = right_i;
-                        left_i = right_i;
-                        l = same[left_i as usize];
-                        right_i = l;
+                        same[left as usize] = right;
+                        left = right;
+                        l = same[left as usize];
+                        right = l;
                     }
                 }
                 // set left and right as same
-                same[left_i as usize] = right_i;
+                same[left as usize] = right;
             }
         }
         // second row process, right-left
@@ -82,9 +83,13 @@ fn main() {
     // main call
     let m = generate_autostereogram();
     // construct image buffer
-    let mut img: RgbImage = ImageBuffer::new(512, 512);
+    let mut img: RgbImage = ImageBuffer::new(
+        MAX_X as u32, MAX_Y as u32);
+        
     for (x, y, pixel) in img.enumerate_pixels_mut() {
-        let m_pix: u8 = 255 * m[x as usize][y as usize] as u8;
+        let x = x as usize;
+        let y = y as usize;
+        let m_pix: u8 = 255 * m[x][y] as u8;
         *pixel = image::Rgb([m_pix, m_pix, m_pix]);
     }
     // save image as png
