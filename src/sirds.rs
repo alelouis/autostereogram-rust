@@ -1,6 +1,6 @@
 // original paper: https://www.cs.waikato.ac.nz/~ihw/papers/94-HWT-SI-IHW-SIRDS-paper.pdf
 
-use image::{GenericImageView, ImageBuffer, RgbImage, imageops};
+use image::{GenericImageView, ImageBuffer, RgbImage};
 use rand::Rng;
 
 const MAX_X: usize = 512; // image X size
@@ -22,10 +22,7 @@ fn generate_autostereogram() -> [[u8; MAX_X]; MAX_X] {
 
     let mut z: [[f64; MAX_X]; MAX_Y] = [[0.0; MAX_X]; MAX_Y];
 
-    let img = image::open("rust.png").unwrap();
-    let mut tile = image::open("tile.jpeg").unwrap();
-    let subtile = imageops::resize(&mut tile, 25, 25, image::imageops::FilterType::Nearest);
-
+    let img = image::open("inputs/depthmap.png").unwrap();
     for y in 0..MAX_Y {
         for x in 0..MAX_X {
             z[x][y] = img.get_pixel(x as u32, y as u32)[0] as f64 / 255.;
@@ -72,10 +69,7 @@ fn generate_autostereogram() -> [[u8; MAX_X]; MAX_X] {
         // second row process, right-left
         for x in (0..MAX_X).rev() {
             if same[x] == x as u32 {
-                // pix[x] = rng.gen_range(0..2) // if unconstrained, sample value
-                let i = (x as u32) % subtile.dimensions().0;
-                let j = (y as u32) % subtile.dimensions().0;
-                pix[x] = subtile.get_pixel(i, j)[0];
+                pix[x] = rng.gen_range(0..2) // if unconstrained, sample value
             } else {
                 pix[x] = pix[same[x] as usize]; // else set value as right value
             }
@@ -95,12 +89,9 @@ fn main() {
     for (x, y, pixel) in img.enumerate_pixels_mut() {
         let x = x as usize;
         let y = y as usize;
-        let m_pix: u8 = 1 * m[x][y] as u8;
+        let m_pix: u8 = 255 * m[x][y] as u8;
         *pixel = image::Rgb([m_pix, m_pix, m_pix]);
     }
     // save image as png
-    img.save("autostereogram.png").unwrap();
-
-
-
+    img.save("outputs/autostereogram_sirds.png").unwrap();
 }
